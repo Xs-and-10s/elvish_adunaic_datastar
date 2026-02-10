@@ -1,0 +1,15 @@
+{
+  "name": "elvish_adunaic_datastar",
+  "version": "0.1.1",
+  "description": "Testbed for Elvish CSS + Adûnaic + Datastar integration",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Assets build not needed - using CDN'",
+    "copy-assets": "cp node_modules/elvish-css/dist/* priv/static/css/ && cp node_modules/adunaic/dist/* priv/static/js/"
+  },
+  "dependencies": {
+    "elvish-css": "latest",
+    "adunaic": "^1.3.3"
+  },
+  "devDependencies": {}
+}

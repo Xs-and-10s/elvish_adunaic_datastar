@@ -1,0 +1,8 @@
+/* 
+ * JavaScript assets placeholder
+ * 
+ * If you run `npm run copy-assets`, the Elvish CSS and Adûnaic 
+ * bundles will be copied here for local serving.
+ * 
+ * By default, the app uses CDN versions.
+ */

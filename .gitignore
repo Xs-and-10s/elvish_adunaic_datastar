@@ -1,0 +1,23 @@
+# Elixir
+/_build/
+/deps/
+*.ez
+*.beam
+erl_crash.dump
+
+# npm
+/node_modules/
+package-lock.json
+
+# IDE
+.elixir_ls/
+.vscode/
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env
+.env.local
