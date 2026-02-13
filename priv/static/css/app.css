@@ -1,70 +1,8 @@
 /**
- * App-specific styles for Elvish + Adûnaic + Datastar testbed
- * 
- * This file contains:
- * - CSS custom properties for theming
- * - Overrides or extensions to Elvish CSS
- * - Custom component styling
+ * App-specific styles
+ *
+ * Elvish CSS custom elements are provided by the npm package.
+ * No fallback utility classes needed.
  */
 
-:root {
-  /* Color palette - matches Adûnaic defaults */
-  --color-bg: #0a0a0f;
-  --color-surface: #13131a;
-  --color-surface-raised: #1a1a24;
-  --color-text: #e5e5e5;
-  --color-text-muted: rgba(255, 255, 255, 0.6);
-  --color-accent: oklch(75% 0.18 168);
-  --color-accent-hover: oklch(80% 0.18 168);
-  
-  /* Elvish CSS custom property overrides */
-  --el-measure: 65ch;
-  --stack-gap: 1.5rem;
-  --cluster-gap: 1rem;
-}
-
-/* Dark mode body defaults */
-body {
-  background: var(--color-bg);
-  color: var(--color-text);
-}
-
-/* Greeting animation */
-.greeting {
-  display: inline-block;
-  transition: all 0.3s ease;
-}
-
-/* Card styling for demo sections */
-.demo-card {
-  background: var(--color-surface);
-  border-radius: 12px;
-  padding: 1.5rem;
-}
-
-/* Elvish layout utilities - fallbacks if CDN fails */
-.el-stack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--stack-gap, 1.5rem);
-}
-
-.el-center {
-  box-sizing: content-box;
-  max-inline-size: var(--el-measure, 65ch);
-  margin-inline: auto;
-  padding-inline: 1rem;
-}
-
-.el-cluster {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--cluster-gap, 1rem);
-  align-items: center;
-}
-
-/* Datastar loading states */
-[data-loading] {
-  opacity: 0.7;
-  pointer-events: none;
-}
+/* Add any app-specific customizations here */
