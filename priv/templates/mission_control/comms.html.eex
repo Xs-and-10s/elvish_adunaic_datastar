@@ -1,0 +1,221 @@
+<%# 
+  Comms page template - Communications and messaging.
+  
+  Featured Elvish primitives:
+  - <i-esgal> — Cover/vertical centering for compose area
+  - <i-hath> — Vertical stacks for message threads
+  - <i-glan-veleg> — Sidebar layout for channels list
+  - <i-tiniath> — Horizontal clusters
+  
+  Assigns:
+  - @default_channel - The initially selected channel (default: "bridge")
+  - @signal_strength - Initial signal strength percentage (default: 94)
+%>
+
+<!-- Initialize Datastar signals -->
+<div data-signals="{
+  activeChannel: '<%= @default_channel %>',
+  messageText: '',
+  signalStrength: <%= @signal_strength %>,
+  sending: false
+}">
+
+<!-- COMMS STATUS BAR -->
+<section>
+  <i-tiniath space="var(--s1)" style="--tiniath-space: var(--s1);">
+    <i-bau padding="var(--s0)" style="--bau-padding: var(--s0);" class="panel">
+      <i-tiniath space="var(--s-1)" align="center" style="--tiniath-space: var(--s-1); --tiniath-align: center;">
+        <span style="font-size: 1.25rem;">📡</span>
+        <i-hath space="0" style="--hath-space: 0;">
+          <div style="font-weight: 600;">Signal Strength</div>
+          <div style="font-size: 0.85rem; color: var(--color-success);"><span data-text="$signalStrength"><%= @signal_strength %></span>%</div>
+        </i-hath>
+      </i-tiniath>
+    </i-bau>
+    <i-bau padding="var(--s0)" style="--bau-padding: var(--s0);" class="panel">
+      <i-tiniath space="var(--s-1)" align="center" style="--tiniath-space: var(--s-1); --tiniath-align: center;">
+        <span style="font-size: 1.25rem;">🔗</span>
+        <i-hath space="0" style="--hath-space: 0;">
+          <div style="font-weight: 600;">Active Relays</div>
+          <div style="font-size: 0.85rem; color: var(--color-text-muted);">3 of 4</div>
+        </i-hath>
+      </i-tiniath>
+    </i-bau>
+    <i-bau padding="var(--s0)" style="--bau-padding: var(--s0);" class="panel">
+      <i-tiniath space="var(--s-1)" align="center" style="--tiniath-space: var(--s-1); --tiniath-align: center;">
+        <span style="font-size: 1.25rem;">⏱️</span>
+        <i-hath space="0" style="--hath-space: 0;">
+          <div style="font-weight: 600;">Signal Delay</div>
+          <div style="font-size: 0.85rem; color: var(--color-text-muted);">2.4s to Earth</div>
+        </i-hath>
+      </i-tiniath>
+    </i-bau>
+  </i-tiniath>
+</section>
+
+<!-- MAIN COMMS INTERFACE using nested i-glan-veleg -->
+<section>
+  <i-glan-veleg side="left" side-width="200px" content-min="60%" space="var(--s0)" style="--glan-veleg-width: 200px; --glan-veleg-content-min: 60%; --glan-veleg-space: var(--s0); min-height: 500px;">
+    
+    <!-- CHANNELS SIDEBAR -->
+    <i-bau padding="var(--s0)" style="--bau-padding: var(--s0);" class="panel">
+      <i-hath space="var(--s0)" style="--hath-space: var(--s0);">
+        <div class="panel-header">
+          <h3 style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">Channels</h3>
+        </div>
+        
+        <i-hath space="var(--s-2)" style="--hath-space: var(--s-2);">
+          <%= for {id, icon, label} <- @channels do %>
+          <a href="#" class="nav-item" data-class:active="$activeChannel === '<%= id %>'" data-on:click__prevent="$activeChannel = '<%= id %>'" style="padding: 0.5rem 0.75rem;">
+            <i-tiniath space="var(--s-1)" align="center" style="--tiniath-space: var(--s-1); --tiniath-align: center;">
+              <span><%= icon %></span>
+              <span><%= label %></span>
+            </i-tiniath>
+          </a>
+          <% end %>
+        </i-hath>
+        
+        <div style="margin-top: var(--s1); padding-top: var(--s0); border-top: 1px solid rgba(255,255,255,0.1);">
+          <div class="panel-header">
+            <h3 style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">Direct</h3>
+          </div>
+          <i-hath space="var(--s-2)" style="--hath-space: var(--s-2);">
+            <%= for {id, icon, label} <- @direct_messages do %>
+            <a href="#" class="nav-item" data-class:active="$activeChannel === '<%= id %>'" data-on:click__prevent="$activeChannel = '<%= id %>'" style="padding: 0.5rem 0.75rem;">
+              <i-tiniath space="var(--s-1)" align="center" style="--tiniath-space: var(--s-1); --tiniath-align: center;">
+                <%= if id == "kowalski" do %>
+                <div class="crew-avatar" style="width: 24px; height: 24px; font-size: 0.6rem;">AK</div>
+                <% else %>
+                <span><%= icon %></span>
+                <% end %>
+                <span><%= label %></span>
+              </i-tiniath>
+            </a>
+            <% end %>
+          </i-hath>
+        </div>
+      </i-hath>
+    </i-bau>
+    
+    <!-- MESSAGE AREA -->
+    <i-bau padding="0" style="--bau-padding: 0;" class="panel">
+      <i-hath space="0" style="--hath-space: 0; height: 100%; display: flex; flex-direction: column;">
+        
+        <!-- Channel Header -->
+        <div style="padding: var(--s0); border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <i-tiniath justify="space-between" align="center" style="--tiniath-justify: space-between; --tiniath-align: center;">
+            <i-tiniath space="var(--s-1)" align="center" style="--tiniath-space: var(--s-1); --tiniath-align: center;">
+              <!-- Channel icon -->
+              <span style="font-size: 1.25rem;" data-show="$activeChannel === 'bridge'">🎯</span>
+              <span style="font-size: 1.25rem;" data-show="$activeChannel === 'engineering'">🔧</span>
+              <span style="font-size: 1.25rem;" data-show="$activeChannel === 'science'">🔬</span>
+              <span style="font-size: 1.25rem;" data-show="$activeChannel === 'medical'">🏥</span>
+              <div class="crew-avatar" style="width: 32px; height: 32px; font-size: 0.7rem;" data-show="$activeChannel === 'kowalski'">AK</div>
+              <span style="font-size: 1.25rem;" data-show="$activeChannel === 'earth'">🌍</span>
+              
+              <i-hath space="0" style="--hath-space: 0;">
+                <!-- Channel name -->
+                <div style="font-weight: 600;">
+                  <span data-show="$activeChannel === 'bridge'">#bridge</span>
+                  <span data-show="$activeChannel === 'engineering'">#engineering</span>
+                  <span data-show="$activeChannel === 'science'">#science</span>
+                  <span data-show="$activeChannel === 'medical'">#medical</span>
+                  <span data-show="$activeChannel === 'kowalski'">Cmdr. Kowalski</span>
+                  <span data-show="$activeChannel === 'earth'">Earth Command</span>
+                </div>
+                <!-- Channel subtitle -->
+                <div style="font-size: 0.8rem; color: var(--color-text-muted);">
+                  <span data-show="$activeChannel === 'bridge'">4 members online</span>
+                  <span data-show="$activeChannel === 'engineering'">3 members online</span>
+                  <span data-show="$activeChannel === 'science'">2 members online</span>
+                  <span data-show="$activeChannel === 'medical'">2 members online</span>
+                  <span data-show="$activeChannel === 'kowalski'">Station Commander</span>
+                  <span data-show="$activeChannel === 'earth'">2.4s signal delay</span>
+                </div>
+              </i-hath>
+            </i-tiniath>
+            <i-tiniath space="var(--s-1)" style="--tiniath-space: var(--s-1);">
+              <an-tabar size="sm" variant="ghost">📌</an-tabar>
+              <an-tabar size="sm" variant="ghost">⚙️</an-tabar>
+            </i-tiniath>
+          </i-tiniath>
+        </div>
+        
+        <!-- Messages using i-esgal for vertical distribution -->
+        <i-esgal min-height="300px" space="var(--s0)" style="--esgal-min-height: 300px; --esgal-space: var(--s0); flex: 1; padding: var(--s0); overflow-y: auto;">
+          
+          <!-- Spacer pushes content down -->
+          <div></div>
+          
+          <!-- Message threads for each channel -->
+          <%= for {channel_id, messages} <- @message_threads do %>
+          <i-hath space="var(--s0)" style="--hath-space: var(--s0);" data-centered data-show="$activeChannel === '<%= channel_id %>'">
+            <%= for msg <- messages do %>
+            <div class="message <%= msg.type %>">
+              <i-hath space="var(--s-2)" style="--hath-space: var(--s-2);">
+                <div style="font-size: 0.8rem; <%= if msg.type == "outgoing", do: "opacity: 0.7;", else: "color: var(--color-text-muted);" %>"><%= msg.sender %> • <%= msg.time %></div>
+                <div><%= msg.text %></div>
+              </i-hath>
+            </div>
+            <% end %>
+          </i-hath>
+          <% end %>
+          
+          <!-- Container for dynamically added messages -->
+          <div id="new-messages">
+            <i-hath space="var(--s0)" style="--hath-space: var(--s0);"></i-hath>
+          </div>
+          
+          <!-- Bottom spacer -->
+          <div></div>
+          
+        </i-esgal>
+        
+        <!-- Compose Area -->
+        <div style="padding: var(--s0); border-top: 1px solid rgba(255,255,255,0.1); background: var(--color-surface-raised);">
+          <i-tiniath space="var(--s-1)" style="--tiniath-space: var(--s-1);">
+            <input 
+              type="text" 
+              placeholder="Type a message..." 
+              style="
+                flex: 1;
+                padding: 0.75rem 1rem;
+                background: var(--color-surface);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 8px;
+                color: var(--color-text);
+                font-family: inherit;
+                font-size: 0.95rem;
+              "
+              data-bind:message-text
+            >
+            <an-tabar variant="primary" data-on:click="@post('/sse/send-message')" data-indicator:sending data-attr:disabled="$sending || $messageText === ''">
+              <span data-show="!$sending">Send</span>
+              <span data-show="$sending">...</span>
+            </an-tabar>
+          </i-tiniath>
+        </div>
+        
+      </i-hath>
+    </i-bau>
+    
+  </i-glan-veleg>
+</section>
+
+<!-- BROADCAST CONTROLS -->
+<section>
+  <i-bau padding="var(--s1)" style="--bau-padding: var(--s1);" class="panel">
+    <i-hath space="var(--s0)" style="--hath-space: var(--s0);">
+      <div class="panel-header">
+        <h2>Broadcast Controls</h2>
+      </div>
+      <i-tiniath space="var(--s0)" style="--tiniath-space: var(--s0);">
+        <an-tabar variant="secondary">📢 Station-wide Announcement</an-tabar>
+        <an-tabar variant="secondary">🔔 Emergency Alert</an-tabar>
+        <an-tabar variant="outline">📝 View Message Log</an-tabar>
+      </i-tiniath>
+    </i-hath>
+  </i-bau>
+</section>
+
+</div>

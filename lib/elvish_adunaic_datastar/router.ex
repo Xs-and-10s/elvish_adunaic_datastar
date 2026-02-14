@@ -24,9 +24,50 @@ defmodule ElvishAdunaicDatastar.Router do
     |> send_resp(200, html)
   end
 
-  # Sample page 1: Mission Control Dashboard
+  # ============================================
+  # MISSION CONTROL PAGES
+  # Each page showcases different Elvish primitives
+  # ============================================
+
+  # Dashboard: i-vircantie, i-gwistindor, i-hath, i-tiniath
   get "/sample-1" do
-    html = ElvishAdunaicDatastar.SamplePage1.render()
+    html = ElvishAdunaicDatastar.MissionControl.Dashboard.render()
+
+    conn
+    |> put_resp_content_type("text/html")
+    |> send_resp(200, html)
+  end
+
+  # Crew: i-vircantie for crew cards, i-bau for profiles
+  get "/sample-1/crew" do
+    html = ElvishAdunaicDatastar.MissionControl.Crew.render()
+
+    conn
+    |> put_resp_content_type("text/html")
+    |> send_resp(200, html)
+  end
+
+  # Systems: i-miriant explicit grid, i-hath status lists
+  get "/sample-1/systems" do
+    html = ElvishAdunaicDatastar.MissionControl.Systems.render()
+
+    conn
+    |> put_resp_content_type("text/html")
+    |> send_resp(200, html)
+  end
+
+  # Sensors: i-glan-tholl reel, i-gant-thala aspect ratio
+  get "/sample-1/sensors" do
+    html = ElvishAdunaicDatastar.MissionControl.Sensors.render()
+
+    conn
+    |> put_resp_content_type("text/html")
+    |> send_resp(200, html)
+  end
+
+  # Comms: i-esgal cover, i-glan-veleg nested sidebar
+  get "/sample-1/comms" do
+    html = ElvishAdunaicDatastar.MissionControl.Comms.render()
 
     conn
     |> put_resp_content_type("text/html")
@@ -158,29 +199,12 @@ defmodule ElvishAdunaicDatastar.Router do
     time_str = Calendar.strftime(now, "%H:%M")
 
     log_html = """
-    <div id="activity-log" class="el-stack" style="--stack-gap: 0;">
-      <div class="log-entry" style="color: var(--color-accent);">
-        <div class="log-time">#{time_str}</div>
-        <div>Manual log entry added via SSE</div>
-      </div>
-      <div class="log-entry">
-        <div class="log-time">07:42</div>
-        <div>Sensor array calibration complete</div>
-      </div>
-      <div class="log-entry">
-        <div class="log-time">07:15</div>
-        <div>Shift change: Alpha crew on duty</div>
-      </div>
-      <div class="log-entry">
-        <div class="log-time">06:58</div>
-        <div>Communications relay synchronized</div>
-      </div>
-    </div>
+    <div id="activity-log"><i-hath space="0" style="--hath-space: 0;"><div class="log-entry" style="color: var(--color-accent);"><div class="log-time">#{time_str}</div><div>Manual log entry added via SSE</div></div><div class="log-entry"><div class="log-time">07:42</div><div>Sensor array calibration complete</div></div><div class="log-entry"><div class="log-time">07:15</div><div>Shift change: Alpha crew on duty</div></div><div class="log-entry"><div class="log-time">06:58</div><div>Communications relay synchronized</div></div></i-hath></div>
     """
 
     event = """
     event: datastar-patch-elements
-    data: elements #{String.replace(log_html, "\n", "")}
+    data: elements #{String.trim(log_html)}
 
     """
 
@@ -189,6 +213,70 @@ defmodule ElvishAdunaicDatastar.Router do
     |> put_resp_header("cache-control", "no-cache")
     |> send_chunked(200)
     |> send_sse_event(event)
+  end
+
+  # SSE endpoint: Send message in Comms page
+  post "/sse/send-message" do
+    # For POST requests, Datastar sends signals as JSON body
+    {:ok, body, conn} = Plug.Conn.read_body(conn)
+    signals = case Jason.decode(body) do
+      {:ok, parsed} -> parsed
+      {:error, _} -> %{}
+    end
+
+    message_text = Map.get(signals, "messageText", "")
+    channel = Map.get(signals, "activeChannel", "bridge")
+
+    now = DateTime.utc_now()
+    time_str = Calendar.strftime(now, "%H:%M")
+
+    # Only process if there's a message
+    if message_text != "" do
+      # Create the outgoing message HTML
+      outgoing_msg = """
+      <div class="message outgoing">
+        <i-hath space="var(--s-2)" style="--hath-space: var(--s-2);">
+          <div style="font-size: 0.8rem; opacity: 0.7;">You • #{time_str}</div>
+          <div>#{html_escape(message_text)}</div>
+        </i-hath>
+      </div>
+      """
+
+      # Generate a contextual reply based on channel
+      reply = generate_reply(channel, message_text)
+      reply_msg = """
+      <div class="message incoming">
+        <i-hath space="var(--s-2)" style="--hath-space: var(--s-2);">
+          <div style="font-size: 0.8rem; color: var(--color-text-muted);">#{reply.sender} • #{time_str}</div>
+          <div>#{reply.text}</div>
+        </i-hath>
+      </div>
+      """
+
+      # Patch the new messages into the container
+      event = """
+      event: datastar-patch-elements
+      data: selector #new-messages
+      data: mode append
+      data: elements <div>#{String.replace(outgoing_msg, "\n", "")}#{String.replace(reply_msg, "\n", "")}</div>
+
+      event: datastar-patch-signals
+      data: signals {messageText: ''}
+
+      """
+
+      conn
+      |> put_resp_content_type("text/event-stream")
+      |> put_resp_header("cache-control", "no-cache")
+      |> send_chunked(200)
+      |> send_sse_event(event)
+    else
+      conn
+      |> put_resp_content_type("text/event-stream")
+      |> put_resp_header("cache-control", "no-cache")
+      |> send_chunked(200)
+      |> send_sse_event("")
+    end
   end
 
   match _ do
@@ -213,5 +301,59 @@ defmodule ElvishAdunaicDatastar.Router do
   defp send_sse_event(conn, event) do
     {:ok, conn} = chunk(conn, event)
     conn
+  end
+
+  # HTML escape for user input
+  defp html_escape(text) do
+    text
+    |> String.replace("&", "&amp;")
+    |> String.replace("<", "&lt;")
+    |> String.replace(">", "&gt;")
+    |> String.replace("\"", "&quot;")
+    |> String.replace("'", "&#39;")
+  end
+
+  # Generate contextual replies based on channel
+  defp generate_reply(channel, _message) do
+    case channel do
+      "bridge" ->
+        Enum.random([
+          %{sender: "Cmdr. Kowalski", text: "Acknowledged. Keep me posted on any changes."},
+          %{sender: "Lt. Nakamura", text: "Copy that. I'll coordinate with Engineering."},
+          %{sender: "Ens. Rodriguez", text: "Understood. Standing by for further instructions."}
+        ])
+      "engineering" ->
+        Enum.random([
+          %{sender: "Lt. Nakamura", text: "Roger that. I'll check the diagnostics and report back."},
+          %{sender: "Ens. Wong", text: "On it. Should have an update within the hour."},
+          %{sender: "Lt. Nakamura", text: "Affirmative. Power systems are stable for now."}
+        ])
+      "science" ->
+        Enum.random([
+          %{sender: "Ens. Rodriguez", text: "Fascinating! I'll add that to my analysis. 🔬"},
+          %{sender: "Ens. Rodriguez", text: "Good thinking. Let me run some additional tests."},
+          %{sender: "Ens. Rodriguez", text: "Noted. The data supports your observation."}
+        ])
+      "medical" ->
+        Enum.random([
+          %{sender: "Dr. Kane", text: "Thanks for the update. Stay healthy out there! 💊"},
+          %{sender: "Dr. Kane", text: "Understood. I'll make a note in your file."},
+          %{sender: "Dr. Kane", text: "Roger. Don't forget to stay hydrated!"}
+        ])
+      "kowalski" ->
+        Enum.random([
+          %{sender: "Cmdr. Kowalski", text: "Good work. I appreciate the update."},
+          %{sender: "Cmdr. Kowalski", text: "Acknowledged. Keep up the excellent work! 🌟"},
+          %{sender: "Cmdr. Kowalski", text: "Thank you. I'll factor that into our planning."}
+        ])
+      "earth" ->
+        Enum.random([
+          %{sender: "Earth Command", text: "Message received, Station Anarion. Stand by for confirmation. 🌍"},
+          %{sender: "Earth Command", text: "Copy that. Earth Command acknowledges your transmission."},
+          %{sender: "Earth Command", text: "Understood. We'll relay this to mission control."}
+        ])
+      _ ->
+        %{sender: "System", text: "Message received."}
+    end
   end
 end
